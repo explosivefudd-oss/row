@@ -2,12 +2,21 @@ export default async function handler(req, res) {
   const code = req.query && req.query.code;
   if (req.query && req.query.error) return res.status(400).send('WHOOP auth error: ' + req.query.error);
   if (!code) return res.status(400).send('Missing code parameter.');
-  const clientId     = process.env.WHOOP_CLIENT_ID;
+
+  // Client ID is not a secret — safe to inline as fallback.
+  const clientId = process.env.WHOOP_CLIENT_ID || '02ca8924-82c7-41e8-838b-3bafe91ec9ae';
   const clientSecret = process.env.WHOOP_CLIENT_SECRET;
-  const redirectUri  = process.env.WHOOP_REDIRECT_URI;
-  if (!clientId || !clientSecret || !redirectUri) {
-    return res.status(500).send('Server not configured (missing WHOOP_* env vars).');
+  // Compute redirect URI from the incoming request so WHOOP_REDIRECT_URI env var is optional.
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host  = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const redirectUri = process.env.WHOOP_REDIRECT_URI || (proto + '://' + host + '/api/whoop-callback');
+
+  if (!clientSecret) {
+    return res.status(500).send(
+      'Missing WHOOP_CLIENT_SECRET — add it in Vercel → Settings → Environment Variables, then redeploy.'
+    );
   }
+
   try {
     const body = new URLSearchParams({
       grant_type: 'authorization_code', code, redirect_uri: redirectUri,
@@ -22,12 +31,13 @@ export default async function handler(req, res) {
     if (!tokenRes.ok) return res.status(500).send('WHOOP token exchange failed: ' + text);
     let json;
     try { json = JSON.parse(text); } catch { return res.status(500).send('Non-JSON: ' + text); }
-    const access = json.access_token || '';
-    const refresh = json.refresh_token || '';
-    const expiresIn = json.expires_in || 3600;
+    const access    = json.access_token  || '';
+    const refresh   = json.refresh_token || '';
+    const expiresIn = json.expires_in    || 3600;
     const hash = new URLSearchParams({
-      whoop_access: access, whoop_refresh: refresh,
-      whoop_expires: String(Date.now() + expiresIn * 1000),
+      whoop_access:   access,
+      whoop_refresh:  refresh,
+      whoop_expires:  String(Date.now() + expiresIn * 1000),
     }).toString();
     res.writeHead(302, { Location: '/health.html#' + hash });
     res.end();

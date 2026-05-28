@@ -4,13 +4,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
+
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   const refresh = body && body.refresh_token;
   if (!refresh) return res.status(400).json({ error: 'refresh_token required' });
-  const clientId = process.env.WHOOP_CLIENT_ID;
+
+  const clientId     = process.env.WHOOP_CLIENT_ID || '02ca8924-82c7-41e8-838b-3bafe91ec9ae';
   const clientSecret = process.env.WHOOP_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return res.status(500).json({ error: 'server not configured' });
+  if (!clientSecret) return res.status(500).json({ error: 'missing WHOOP_CLIENT_SECRET env var' });
+
   try {
     const form = new URLSearchParams({
       grant_type: 'refresh_token', refresh_token: refresh,
