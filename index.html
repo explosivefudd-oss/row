@@ -589,6 +589,101 @@ body::after {
 }
 .gm-status.gm-status-error { color: var(--danger); }
 
+.gm-scan {
+  padding: 11px 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  font-family: inherit; font-size: 15px; line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.gm-scan:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
+.gm-scan:disabled { opacity: 0.5; cursor: default; }
+
+/* OCR modal */
+.ocr-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+}
+.ocr-overlay.show { display: flex; }
+.ocr-modal {
+  background: #111113;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px; padding: 22px;
+  width: 100%; max-width: 420px; max-height: 82vh;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.ocr-modal-title {
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+  margin: 0 0 14px;
+}
+.ocr-preview-img {
+  display: block; width: 100%; max-height: 160px; object-fit: contain;
+  border-radius: 10px; margin-bottom: 14px;
+  background: rgba(255,255,255,0.04);
+}
+.ocr-scanning {
+  text-align: center; padding: 20px 0;
+  color: var(--text-tertiary); font-size: 13px;
+}
+.ocr-item-list { list-style: none; margin: 0 0 16px; padding: 0; }
+.ocr-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 12px; margin-bottom: 6px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.ocr-item:hover { background: rgba(255,255,255,0.06); }
+.ocr-item-cb {
+  appearance: none; -webkit-appearance: none;
+  width: 20px; height: 20px; flex-shrink: 0;
+  margin: 1px 0 0;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.28); border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  background-repeat: no-repeat; background-position: center; background-size: 60%;
+}
+.ocr-item-cb:checked {
+  background-color: #6BE3A4; border-color: #6BE3A4;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='%230A0A0B' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.ocr-item-text {
+  font-size: 13px; color: var(--text-primary); line-height: 1.4; padding-top: 1px;
+}
+.ocr-no-items {
+  text-align: center; padding: 10px 0 16px;
+  color: var(--text-tertiary); font-size: 13px; font-style: italic;
+}
+.ocr-actions { display: flex; gap: 8px; }
+.ocr-confirm {
+  flex: 1; padding: 12px; border: 0; border-radius: 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
+  color: #0A0A0B;
+  font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.35);
+  transition: transform 0.1s, filter 0.15s;
+}
+.ocr-confirm:hover { filter: brightness(1.06); }
+.ocr-confirm:disabled { opacity: 0.45; cursor: default; filter: none; }
+.ocr-cancel {
+  padding: 12px 18px;
+  border: 1px solid rgba(255,255,255,0.10); border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.ocr-cancel:hover { background: rgba(255,255,255,0.07); }
+
 @media (max-width: 480px) {
   body { padding: max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 50px max(14px, env(safe-area-inset-left)); }
   .gm-card { padding: 16px; }
@@ -668,6 +763,7 @@ body::after {
         <input id="goalInput" class="gm-input" type="text" placeholder="Add a goal for today…" autocomplete="off">
         <button type="button" id="goalAddBtn"    class="gm-add">+ Add</button>
         <button type="button" id="goalPolishBtn" class="gm-polish">✨ Polish</button>
+        <button type="button" id="goalScanBtn" class="gm-scan" title="Scan a photo of your list">📷</button>
         <div class="gm-status" id="polishStatus"></div>
       </div>
     </div>
@@ -687,11 +783,27 @@ body::after {
         <input id="tomorrowInput" class="gm-input" type="text" placeholder="Add a goal for tomorrow…" autocomplete="off">
         <button type="button" id="tomorrowAddBtn"    class="gm-add">+ Add</button>
         <button type="button" id="tomorrowPolishBtn" class="gm-polish">✨ Polish</button>
+        <button type="button" id="tomorrowScanBtn" class="gm-scan" title="Scan a photo of your list">📷</button>
         <div class="gm-status" id="tomorrowStatus"></div>
       </div>
     </div>
   </div>
 
+</div>
+
+<input type="file" id="ocrFileInput" accept="image/*" style="display:none">
+<div class="ocr-overlay" id="ocrOverlay">
+  <div class="ocr-modal">
+    <p class="ocr-modal-title" id="ocrModalTitle">Scan your list</p>
+    <img class="ocr-preview-img" id="ocrPreview" src="" alt="Uploaded list">
+    <p class="ocr-scanning" id="ocrScanning" style="display:none">Reading your list…</p>
+    <ul class="ocr-item-list" id="ocrItemList"></ul>
+    <p class="ocr-no-items" id="ocrNoItems" style="display:none"></p>
+    <div class="ocr-actions">
+      <button type="button" class="ocr-confirm" id="ocrConfirm" disabled>Reading…</button>
+      <button type="button" class="ocr-cancel" id="ocrCancel">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1291,6 +1403,151 @@ body::after {
     document.getElementById('tomorrowStatus'),
     loadTomorrow
   );
+
+  // ---------- Photo scan (Tesseract OCR) ----------
+  var ocrTargetKey    = null;
+  var ocrTargetReload = null;
+
+  function loadTesseract() {
+    return new Promise(function (resolve, reject) {
+      if (window.Tesseract) { resolve(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload  = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function parseOcrLines(raw) {
+    return raw
+      .split('\n')
+      .map(function (l) { return l.replace(/^[\s\-•\*\d\.\[\]□☐☑✓✗]+\s*/, '').trim(); })
+      .filter(function (l) { return l.length >= 3; });
+  }
+
+  function updateOcrConfirmBtn() {
+    var checked = document.getElementById('ocrItemList').querySelectorAll('.ocr-item-cb:checked').length;
+    var btn = document.getElementById('ocrConfirm');
+    btn.textContent = 'Add ' + checked + ' item' + (checked === 1 ? '' : 's');
+    btn.disabled = (checked === 0);
+  }
+
+  function openOcrModal(file) {
+    var overlay  = document.getElementById('ocrOverlay');
+    var preview  = document.getElementById('ocrPreview');
+    var scanning = document.getElementById('ocrScanning');
+    var itemList = document.getElementById('ocrItemList');
+    var noItems  = document.getElementById('ocrNoItems');
+    var confirm  = document.getElementById('ocrConfirm');
+    var title    = document.getElementById('ocrModalTitle');
+
+    title.textContent      = ocrTargetKey === todayKey() ? 'Add to Today' : 'Add to Tomorrow';
+    itemList.innerHTML     = '';
+    noItems.style.display  = 'none';
+    scanning.style.display = 'block';
+    confirm.textContent    = 'Reading…';
+    confirm.disabled       = true;
+
+    var objectUrl = URL.createObjectURL(file);
+    preview.src = objectUrl;
+    overlay.classList.add('show');
+
+    loadTesseract()
+      .then(function () {
+        return Tesseract.createWorker('eng', 1, { logger: function () {} });
+      })
+      .then(function (worker) {
+        return worker.recognize(file).then(function (result) {
+          worker.terminate();
+          return result.data.text;
+        });
+      })
+      .then(function (text) {
+        URL.revokeObjectURL(objectUrl);
+        scanning.style.display = 'none';
+        var lines = parseOcrLines(text);
+        if (lines.length === 0) {
+          noItems.textContent   = 'No text found — try a clearer, well-lit photo.';
+          noItems.style.display = 'block';
+          confirm.textContent   = 'Add 0 items';
+          return;
+        }
+        lines.forEach(function (line) {
+          var li   = document.createElement('li');
+          li.className = 'ocr-item';
+          var cb   = document.createElement('input');
+          cb.type      = 'checkbox';
+          cb.className = 'ocr-item-cb';
+          cb.checked   = true;
+          var span = document.createElement('span');
+          span.className   = 'ocr-item-text';
+          span.textContent = line;
+          li.appendChild(cb);
+          li.appendChild(span);
+          li.addEventListener('click', function (e) {
+            if (e.target !== cb) cb.checked = !cb.checked;
+            updateOcrConfirmBtn();
+          });
+          itemList.appendChild(li);
+        });
+        updateOcrConfirmBtn();
+      })
+      .catch(function () {
+        URL.revokeObjectURL(objectUrl);
+        scanning.style.display = 'none';
+        noItems.textContent   = 'Could not read image — please try again.';
+        noItems.style.display = 'block';
+        confirm.textContent   = 'Add 0 items';
+      });
+  }
+
+  function closeOcrModal() {
+    document.getElementById('ocrOverlay').classList.remove('show');
+    document.getElementById('ocrFileInput').value   = '';
+    document.getElementById('ocrItemList').innerHTML = '';
+    document.getElementById('ocrScanning').style.display = 'none';
+    document.getElementById('ocrNoItems').style.display  = 'none';
+    document.getElementById('ocrPreview').src = '';
+  }
+
+  document.getElementById('ocrCancel').addEventListener('click', closeOcrModal);
+  document.getElementById('ocrOverlay').addEventListener('click', function (e) {
+    if (e.target === this) closeOcrModal();
+  });
+  document.getElementById('ocrConfirm').addEventListener('click', function () {
+    if (!ocrTargetKey || !ocrTargetReload) return;
+    var checked = document.getElementById('ocrItemList').querySelectorAll('.ocr-item-cb:checked');
+    var list    = getGoals(ocrTargetKey);
+    var seen    = new Set(list.map(function (g) { return g.text.toLowerCase(); }));
+    checked.forEach(function (cb) {
+      var text = cb.parentElement.querySelector('.ocr-item-text').textContent.trim();
+      if (text && !seen.has(text.toLowerCase())) {
+        list.push({ text: text, done: false });
+        seen.add(text.toLowerCase());
+      }
+    });
+    setGoals(ocrTargetKey, list);
+    ocrTargetReload();
+    closeOcrModal();
+  });
+
+  document.getElementById('ocrFileInput').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    openOcrModal(file);
+  });
+
+  document.getElementById('goalScanBtn').addEventListener('click', function () {
+    ocrTargetKey    = todayKey();
+    ocrTargetReload = loadToday;
+    document.getElementById('ocrFileInput').click();
+  });
+  document.getElementById('tomorrowScanBtn').addEventListener('click', function () {
+    ocrTargetKey    = tomorrowKey();
+    ocrTargetReload = loadTomorrow;
+    document.getElementById('ocrFileInput').click();
+  });
 
   // ---------- Boot ----------
   rollover();
