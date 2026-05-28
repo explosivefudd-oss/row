@@ -233,6 +233,56 @@ body::after {
 .day-ring-status { font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .day-ring-remaining { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
 .day-ring-hours { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+.day-sched-btn {
+  margin-top: 6px;
+  font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-tertiary); background: transparent; border: none;
+  padding: 0; cursor: pointer; transition: color 0.15s; text-align: left;
+}
+.day-sched-btn:hover { color: var(--text-secondary); }
+.day-sched-panel {
+  flex-basis: 100%;
+  padding: 18px 4px 4px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 6px;
+}
+.day-sched-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.day-sched-label {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  letter-spacing: 0.04em; width: 58px; flex-shrink: 0;
+}
+.day-sched-input {
+  flex: 1; padding: 7px 10px;
+  background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; color: var(--text-primary);
+  font-family: var(--font-mono); font-size: 13px;
+  outline: none; transition: border-color 0.15s;
+  color-scheme: dark;
+}
+.day-sched-input:focus { border-color: rgba(255,255,255,0.28); }
+.day-sched-whoop {
+  flex-shrink: 0;
+  font-size: 10px; font-family: inherit; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--text-tertiary); background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+  padding: 6px 9px; cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.day-sched-whoop:hover { background: rgba(255,255,255,0.08); color: var(--text-secondary); border-color: rgba(255,255,255,0.14); }
+.day-sched-whoop:disabled { opacity: 0.4; cursor: default; }
+.day-sched-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.day-sched-save {
+  padding: 7px 16px; border-radius: 8px; border: 0;
+  background: linear-gradient(180deg, #FFFFFF, #E8E5DD);
+  color: #0A0A0B; font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: filter 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.35);
+}
+.day-sched-save:hover { filter: brightness(1.06); }
+.day-sched-msg { font-size: 11px; color: var(--text-tertiary); font-style: italic; }
 @media (max-width: 480px) {
   .day-ring { width: 144px; height: 144px; }
   .day-ring-percent { font-size: 32px; }
@@ -731,7 +781,24 @@ body::after {
     <div class="day-ring-text">
       <div class="day-ring-status"    id="dayRingStatus">Loading…</div>
       <div class="day-ring-remaining" id="dayRingRemaining">—</div>
-      <div class="day-ring-hours">8:00 AM – 12:00 AM</div>
+      <div class="day-ring-hours"     id="dayRingHours">8:00 AM – 11:00 PM</div>
+      <button class="day-sched-btn" id="daySchedBtn" type="button">⚙ Adjust hours</button>
+    </div>
+  </div>
+  <div class="day-sched-panel" id="daySchedPanel" style="display:none">
+    <div class="day-sched-row">
+      <label class="day-sched-label" for="daySchedWake">Wake up</label>
+      <input type="time" class="day-sched-input" id="daySchedWake" value="08:00">
+      <button class="day-sched-whoop" id="daySchedWakeWhoop" type="button" title="Fill from WHOOP last wake time">⌚ WHOOP</button>
+    </div>
+    <div class="day-sched-row">
+      <label class="day-sched-label" for="daySchedSleep">Bedtime</label>
+      <input type="time" class="day-sched-input" id="daySchedSleep" value="23:00">
+      <button class="day-sched-whoop" id="daySchedSleepWhoop" type="button" title="Fill from WHOOP last sleep start">⌚ WHOOP</button>
+    </div>
+    <div class="day-sched-actions">
+      <button class="day-sched-save" id="daySchedSave" type="button">Save</button>
+      <span class="day-sched-msg" id="daySchedMsg"></span>
     </div>
   </div>
 
@@ -813,8 +880,22 @@ body::after {
   // Paste your Anthropic key here to enable ✨ Polish. Empty = falls back to plain add.
   const ANTHROPIC_API_KEY = '';
 
-  const WAKE_HOUR  = 8;
-  const SLEEP_HOUR = 24;
+  // ---------- day schedule (wake / sleep time) ----------
+  function loadSchedule() {
+    const s = storeGet('day_schedule_v1');
+    return (s && typeof s.wakeH === 'number') ? s : { wakeH: 8, wakeM: 0, sleepH: 23, sleepM: 0 };
+  }
+  let schedule = loadSchedule();
+  function wakeHours()  { return schedule.wakeH  + schedule.wakeM  / 60; }
+  function sleepHours() { return schedule.sleepH + schedule.sleepM / 60; }
+  function fmt12h(h, m) {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+  }
+  function updateHoursLabel() {
+    const el = document.getElementById('dayRingHours');
+    if (el) el.textContent = fmt12h(schedule.wakeH, schedule.wakeM) + ' – ' + fmt12h(schedule.sleepH, schedule.sleepM);
+  }
 
   // ---------- storage helpers ----------
   function storeGet(key) {
@@ -1043,18 +1124,20 @@ body::after {
 
     clockEl.textContent = formatClock(now);
 
-    if (hours < WAKE_HOUR) {
+    const wH = wakeHours(), sH = sleepHours();
+
+    if (hours < wH) {
       fillEl.setAttribute('stroke-dashoffset', C);
       fillEl.style.stroke = '#4D4B47';
       percentEl.textContent = '—';
       phaseEl.textContent   = 'SLEEPING';
       statusEl.textContent  = '😴 Still sleeping';
-      const minsUntil = (WAKE_HOUR - hours) * 60;
+      const minsUntil = (wH - hours) * 60;
       remainingEl.textContent = formatRemaining(minsUntil) + ' until wake-up';
       return;
     }
 
-    if (hours >= SLEEP_HOUR) {
+    if (hours >= sH) {
       fillEl.setAttribute('stroke-dashoffset', 0);
       fillEl.style.stroke = '#E25D7A';
       percentEl.textContent = '100%';
@@ -1064,8 +1147,8 @@ body::after {
       return;
     }
 
-    const span = SLEEP_HOUR - WAKE_HOUR;
-    const percent = (hours - WAKE_HOUR) / span * 100;
+    const span = sH - wH;
+    const percent = (hours - wH) / span * 100;
     fillEl.setAttribute('stroke-dashoffset', C * (1 - percent / 100));
     fillEl.style.stroke = rgb(paletteAt(percent));
     percentEl.textContent = Math.floor(percent) + '%';
@@ -1079,7 +1162,7 @@ body::after {
     phaseEl.textContent  = phase;
     statusEl.textContent = status;
 
-    const minsLeft = (SLEEP_HOUR - hours) * 60;
+    const minsLeft = (sH - hours) * 60;
     remainingEl.textContent = formatRemaining(minsLeft) + ' awake time left';
   }
 
@@ -1549,12 +1632,96 @@ body::after {
     document.getElementById('ocrFileInput').click();
   });
 
+  // ---------- Day schedule panel ----------
+  async function fetchWhoopSleepTimes() {
+    try {
+      const tok = JSON.parse(localStorage.getItem('whoop_tokens_v1'));
+      if (!tok || !tok.access) return null;
+      const r = await fetch('/api/whoop-data?path=/activity/sleep&limit=1', {
+        headers: { 'Authorization': 'Bearer ' + tok.access, 'Accept': 'application/json' }
+      });
+      if (!r.ok) return null;
+      const j = await r.json();
+      const rec = j.records && j.records[0];
+      if (!rec) return null;
+      return {
+        wake:  rec.end   ? new Date(rec.end)   : null,
+        sleep: rec.start ? new Date(rec.start) : null
+      };
+    } catch { return null; }
+  }
+
+  (function wireSchedPanel() {
+    const panel     = document.getElementById('daySchedPanel');
+    const btn       = document.getElementById('daySchedBtn');
+    const wakeInput = document.getElementById('daySchedWake');
+    const sleepInput= document.getElementById('daySchedSleep');
+    const saveBtn   = document.getElementById('daySchedSave');
+    const msg       = document.getElementById('daySchedMsg');
+
+    function toTimeVal(h, m) { return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'); }
+    function showMsg(text, ms) {
+      msg.textContent = text;
+      clearTimeout(msg._t);
+      msg._t = setTimeout(() => { msg.textContent = ''; }, ms || 2500);
+    }
+    function syncInputs() {
+      wakeInput.value  = toTimeVal(schedule.wakeH,  schedule.wakeM);
+      sleepInput.value = toTimeVal(schedule.sleepH, schedule.sleepM);
+    }
+
+    btn.addEventListener('click', () => {
+      const open = panel.style.display !== 'none';
+      panel.style.display = open ? 'none' : 'block';
+      btn.textContent = open ? '⚙ Adjust hours' : '✕ Close';
+      if (!open) syncInputs();
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const [wH, wM] = (wakeInput.value || '').split(':').map(Number);
+      const [sH, sM] = (sleepInput.value || '').split(':').map(Number);
+      if (isNaN(wH) || isNaN(sH)) { showMsg('Invalid time — use HH:MM format.'); return; }
+      if (wH * 60 + (wM || 0) >= sH * 60 + (sM || 0)) { showMsg('Bedtime must be after wake time.'); return; }
+      schedule = { wakeH: wH, wakeM: wM || 0, sleepH: sH, sleepM: sM || 0 };
+      storeSet('day_schedule_v1', schedule);
+      updateHoursLabel();
+      updateDayRing();
+      showMsg('Saved ✓');
+    });
+
+    async function fillFromWhoop(field) {
+      const whoopBtn = field === 'wake'
+        ? document.getElementById('daySchedWakeWhoop')
+        : document.getElementById('daySchedSleepWhoop');
+      const orig = whoopBtn.textContent;
+      whoopBtn.textContent = '⌚ …';
+      whoopBtn.disabled = true;
+      const times = await fetchWhoopSleepTimes();
+      whoopBtn.textContent = orig;
+      whoopBtn.disabled = false;
+      if (!times) { showMsg('WHOOP not connected — link it on the Health tab first.', 3500); return; }
+      const d = field === 'wake' ? times.wake : times.sleep;
+      if (!d) { showMsg('No WHOOP sleep record found.', 3000); return; }
+      if (field === 'wake') {
+        wakeInput.value = toTimeVal(d.getHours(), d.getMinutes());
+        showMsg('Wake time from last WHOOP sleep ✓');
+      } else {
+        sleepInput.value = toTimeVal(d.getHours(), d.getMinutes());
+        showMsg('Bedtime from last WHOOP sleep start ✓');
+      }
+    }
+
+    document.getElementById('daySchedWakeWhoop').addEventListener('click',  () => fillFromWhoop('wake'));
+    document.getElementById('daySchedSleepWhoop').addEventListener('click', () => fillFromWhoop('sleep'));
+  })();
+
   // ---------- Boot ----------
   rollover();
   processStreak();
   loadToday();
   loadTomorrow();
   renderStreak();
+  updateHoursLabel();
   updateDayRing();
   setInterval(updateDayRing, 60 * 1000);
   startTicker();
