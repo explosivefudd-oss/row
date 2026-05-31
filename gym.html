@@ -19,7 +19,7 @@ const CONFIG = {
   appTitle: "Progressive Overload Coach",
 
   // Weight unit shown everywhere. "kg" or "lb".
-  units: "kg",
+  units: "lb",
 
   // Gyms you train at. Add as many as you want.
   // `id` must be a short unique slug (no spaces). `name` is what people see.
@@ -78,15 +78,15 @@ const CONFIG = {
   // First-run defaults. Once a user logs anything, they edit through
   // the in-app + / gear buttons; this block stays as the seed.
   defaultExercises: [
-    { name: "Bench press",     gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 2.5, startWeight: 60 },
-    { name: "Overhead press",  gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 2.5, startWeight: 35 },
-    { name: "Tricep pushdown", gym: "comm", day: "push", repMin: 8, repMax: 12, step: 2.5, startWeight: 25 },
-    { name: "Pull-ups",        gym: "both", day: "pull", repMin: 5, repMax: 10, step: 1,   startWeight: 0, bw: true },
-    { name: "Barbell row",     gym: "comm", day: "pull", repMin: 6, repMax: 10, step: 2.5, startWeight: 50 },
-    { name: "Bicep curl",      gym: "comm", day: "pull", repMin: 8, repMax: 12, step: 1.25,startWeight: 15 },
-    { name: "Back squat",      gym: "comm", day: "legs", repMin: 5, repMax: 8,  step: 5,   startWeight: 80 },
-    { name: "Romanian deadlift", gym: "comm", day: "legs", repMin: 6, repMax: 10, step: 5, startWeight: 60 },
-    { name: "Leg press",       gym: "comm", day: "legs", repMin: 8, repMax: 12, step: 5,   startWeight: 100 }
+    { name: "Bench press",       gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 5,   startWeight: 135 },
+    { name: "Overhead press",    gym: "comm", day: "push", repMin: 5, repMax: 8,  step: 5,   startWeight: 75  },
+    { name: "Tricep pushdown",   gym: "comm", day: "push", repMin: 8, repMax: 12, step: 5,   startWeight: 55  },
+    { name: "Pull-ups",          gym: "both", day: "pull", repMin: 5, repMax: 10, step: 2.5, startWeight: 0, bw: true },
+    { name: "Barbell row",       gym: "comm", day: "pull", repMin: 6, repMax: 10, step: 5,   startWeight: 110 },
+    { name: "Bicep curl",        gym: "comm", day: "pull", repMin: 8, repMax: 12, step: 2.5, startWeight: 30  },
+    { name: "Back squat",        gym: "comm", day: "legs", repMin: 5, repMax: 8,  step: 10,  startWeight: 175 },
+    { name: "Romanian deadlift", gym: "comm", day: "legs", repMin: 6, repMax: 10, step: 10,  startWeight: 135 },
+    { name: "Leg press",         gym: "comm", day: "legs", repMin: 8, repMax: 12, step: 10,  startWeight: 225 }
   ]
 };
 </script>
@@ -1281,7 +1281,7 @@ img, video, canvas, svg { max-width: 100%; }
     <div class="wt-card">
       <div class="wt-row">
         <span class="wt-num" id="wtNum">—</span>
-        <span class="wt-unit" id="wtUnit">kg</span>
+        <span class="wt-unit" id="wtUnit">lb</span>
       </div>
       <div class="wt-delta hidden" id="wtDelta"></div>
       <div class="wt-streak hidden" id="wtStreak">🔥<span id="wtStreakNum">0 day streak</span></div>
@@ -1331,7 +1331,7 @@ img, video, canvas, svg { max-width: 100%; }
           <span class="wt-locked-check">✓</span>
           <div>
             <div class="wt-locked-label">LOGGED TODAY</div>
-            <div class="wt-locked-value" id="wtLockedValue">— kg</div>
+            <div class="wt-locked-value" id="wtLockedValue">— lb</div>
           </div>
         </div>
         <button class="wt-edit-btn" id="wtEditBtn">Edit</button>
@@ -1340,7 +1340,7 @@ img, video, canvas, svg { max-width: 100%; }
       <div class="wt-input-row" id="wtInputRow">
         <div class="wt-input-top">
           <input type="number" step="0.1" class="wt-input" id="wtInput" placeholder="Enter weight" inputmode="decimal" aria-label="Today's weight">
-          <span class="wt-unit-static" id="wtUnitStatic">kg</span>
+          <span class="wt-unit-static" id="wtUnitStatic">lb</span>
           <button class="wt-save-btn" id="wtSaveBtn">Save</button>
         </div>
       </div>
@@ -1478,7 +1478,7 @@ img, video, canvas, svg { max-width: 100%; }
       </div>
       <div class="po-log-grid" id="logGrid">
         <div class="po-field" id="weightField">
-          <label id="weightLabel">Weight (kg)</label>
+          <label id="weightLabel">Weight (lb)</label>
           <div class="po-weight-row">
             <button class="po-w-btn" id="weightDownBtn" type="button">−</button>
             <input type="number" id="weightInput" step="0.5" inputmode="decimal" placeholder="0">
@@ -1515,7 +1515,7 @@ img, video, canvas, svg { max-width: 100%; }
       <div class="po-stats-row">
         <div class="po-stat-box">
           <div class="po-stat-label" id="oneRmLabel">Est. 1RM</div>
-          <div class="po-stat-val" id="oneRm">—<span class="po-unit" id="oneRmUnit">kg</span></div>
+          <div class="po-stat-val" id="oneRm">—<span class="po-unit" id="oneRmUnit">lb</span></div>
         </div>
         <div class="po-stat-box">
           <div class="po-stat-label">Best set</div>
@@ -1566,7 +1566,7 @@ img, video, canvas, svg { max-width: 100%; }
               <span class="po-tw-summary-num" id="poTwSetCount">0</span>
               <span class="po-tw-summary-label">sets</span>
               <span class="po-tw-summary-sep">·</span>
-              <span class="po-tw-summary-vol" id="poTwTotalVol">0 kg lifted</span>
+              <span class="po-tw-summary-vol" id="poTwTotalVol">0 lb lifted</span>
             </div>
           </div>
           <button class="po-tw-done-btn" id="poTwDoneBtn" type="button">Mark workout done</button>
@@ -1711,7 +1711,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
   function normalize(s) {
     s = s || {};
-    s.units = s.units || CONFIG.units || 'kg';
+    s.units = s.units || CONFIG.units || 'lb';
     s.gyms  = (Array.isArray(s.gyms)  && s.gyms.length)  ? s.gyms  : CONFIG.gyms.slice();
     s.days  = (Array.isArray(s.days)  && s.days.length)  ? s.days  : CONFIG.days.slice();
     s.exercises = Array.isArray(s.exercises) ? s.exercises : buildDefaultExercises();
